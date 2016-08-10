@@ -14,6 +14,7 @@ import os
 import sgtk
 from sgtk.platform.qt import QtCore, QtGui
 from sgtk.platform import constants
+from sgtk.descriptor.io_descriptor.git import IODescriptorGit, TankGitError
 
 # for reading each demo's demo.yml file
 from tank_vendor import yaml
@@ -102,6 +103,16 @@ class DemoWidget(QtGui.QSplitter):
         self._demo_name.setObjectName("demo_name")
         self._demo_name.setMinimumHeight(30)
 
+        # demo to app btn
+        self._demo_to_app = QtGui.QPushButton(self)
+        self._demo_to_app.setText("Export Demo to New Toolkit App >")
+        self._demo_to_app.setToolTip(
+            "Use this demo as the start of a new toolkit app."
+        )
+        self._demo_to_app.setObjectName("demo_to_app")
+        self._demo_to_app.setFocusPolicy(QtCore.Qt.NoFocus)
+        self._demo_to_app.clicked.connect(self._on_demo_to_app_clicked)
+
         # shows the description of the demo
         self._demo_desc = QtGui.QLabel(self)
         self._demo_desc.setObjectName("demo_desc")
@@ -148,12 +159,19 @@ class DemoWidget(QtGui.QSplitter):
         self._demo_tabs.addTab(self._demo_widget_tab, "Interactive Demo")
         self._demo_tabs.addTab(demo_code_widget, "Code")
 
+        self._demo_tabs.setCornerWidget(self._demo_to_app)
+
         # an overlay of the tabs for displaying errors, etc.
         self._overlay = overlay.ShotgunOverlayWidget(self._demo_tabs)
 
+        demo_header_layout = QtGui.QHBoxLayout()
+        demo_header_layout.addWidget(self._demo_name)
+        demo_header_layout.addStretch()
+        #demo_header_layout.addWidget(self._demo_to_app)
+
         # layout the demo display widgets
         demo_layout = QtGui.QVBoxLayout()
-        demo_layout.addWidget(self._demo_name)
+        demo_layout.addLayout(demo_header_layout)
         demo_layout.addWidget(self._demo_desc)
         demo_layout.addWidget(self._demo_tabs)
 
@@ -484,6 +502,53 @@ class DemoWidget(QtGui.QSplitter):
         demo_info["widget_class"] = demo_class
 
         return demo_info
+
+    def _on_demo_to_app_clicked(self):
+        """
+        Prompt the user for a location and export the current demo to a working
+        toolkit app.
+        """
+
+        # prompt the user for a location on disk
+        dir_browser = QtGui.QFileDialog(
+            parent=self,
+            caption="Select a destination folder for the Toolkit App",
+        )
+
+        dir_browser.setFileMode(QtGui.QFileDialog.Directory)
+        dir_browser.setOptions(
+        QtGui.QFileDialog.ShowDirsOnly |
+            QtGui.QFileDialog.DontResolveSymlinks
+        )
+        dir_browser.setViewMode(QtGui.QFileDialog.Detail)
+
+        if not dir_browser.exec_():
+            return
+
+        dest_dir = dir_browser.selectedFiles()[0]
+
+        # use the starter app for the scaffolding
+        starter_app_descriptor_dict = {
+            "type": "git_branch",
+            "branch": "master",
+            "path": "https://github.com/shotgunsoftware/tk-multi-starterapp.git"
+        }
+
+        # clone the starter app to the destination location
+        starter_app_descriptor = IODescriptorGit(starter_app_descriptor_dict)
+        try:
+            # i know this is private, but its so awesome!!
+            starter_app_descriptor._clone_then_execute_git_commands(dest_dir, [])
+        except TankGitError, e:
+            QtGui.QMessageBox.warning(
+                self,
+                title="Demo Export Error!",
+                text="Failed to clone the starter app!\nError: %s" % (e,)
+            )
+
+        # TODO: use tk-multi-starterapp scaffolding? build from scratch?
+        # or maybe partical scaffold packaged with this app?
+
 
     def _set_default_demo(self):
         """
