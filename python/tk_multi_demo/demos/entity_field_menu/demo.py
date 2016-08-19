@@ -26,7 +26,7 @@ class EntityFieldMenuDemo(QtGui.QWidget):
     tk-frameworks-qtwidgets framework.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         """
         Initialize the demo widget.
         """
@@ -47,7 +47,6 @@ class EntityFieldMenuDemo(QtGui.QWidget):
         entity_field_menu = shotgun_menus.EntityFieldMenu(
             entity_type,
             self,
-            parent.bg_task_manager,
         )
 
         # ---- define a few simple filter methods for use by the menu
@@ -85,6 +84,7 @@ class EntityFieldMenuDemo(QtGui.QWidget):
 
         # lay out the widgets
         layout = QtGui.QVBoxLayout(self)
+        layout.addStretch()
         layout.addWidget(doc)
         layout.addSpacing(8)
         layout.addWidget(entity_field_menu_button)

@@ -19,13 +19,13 @@ overlay = sgtk.platform.import_framework(
 shotgun_fields = sgtk.platform.import_framework(
     "tk-framework-qtwidgets", "shotgun_fields")
 
-# import the shotgun model module from shotgunutils framework
-shotgun_model = sgtk.platform.import_framework(
-    "tk-framework-shotgunutils", "shotgun_model")
-
 # import the views module from qtwidgets framework
 views = sgtk.platform.import_framework(
     "tk-framework-qtwidgets", "views")
+
+# import the shotgun model module from shotgunutils framework
+shotgun_model = sgtk.platform.import_framework(
+    "tk-framework-shotgunutils", "shotgun_model")
 
 
 class ShotgunHierarchyDemo(QtGui.QWidget):
@@ -34,14 +34,12 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
     as defined by project's tracking settings in Shotgun.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         """
         Return the ``QtGui.QWidget`` instance for this demo.
         """
 
         super(ShotgunHierarchyDemo, self).__init__(parent)
-
-        self._bg_task_manager = parent.bg_task_manager
 
         doc_lbl = QtGui.QLabel(
             "Browse the hierarchy on the left to find <tt>Version</tt> "
@@ -49,10 +47,7 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
         )
 
         # the field manager handles retrieving widgets for shotgun field types
-        fields_manager = shotgun_fields.ShotgunFieldManager(
-            self,
-            bg_task_manager=self._bg_task_manager,
-        )
+        fields_manager = shotgun_fields.ShotgunFieldManager(self)
 
         # construct the view and set the model
         self._hierarchy_view = QtGui.QTreeView()
@@ -103,9 +98,7 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
         self._hierarchy_view.setModel(self._hierarchy_model)
 
         # create a simple shotgun model for querying the versions
-        self._version_model = shotgun_model.SimpleShotgunModel(
-            self, bg_task_manager=self._bg_task_manager
-        )
+        self._version_model = shotgun_model.SimpleShotgunModel(self)
 
         # --- connect some signals
 
