@@ -27,6 +27,10 @@ views = sgtk.platform.import_framework(
 shotgun_model = sgtk.platform.import_framework(
     "tk-framework-shotgunutils", "shotgun_model")
 
+# import the task manager from shotgunutils framework
+task_manager = sgtk.platform.import_framework(
+    "tk-framework-shotgunutils", "task_manager")
+
 
 class ShotgunHierarchyDemo(QtGui.QWidget):
     """
@@ -41,13 +45,18 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
 
         super(ShotgunHierarchyDemo, self).__init__(parent)
 
+        # create a background task manager for each of our components to use
+        # for threading
+        self._bg_task_manager = task_manager.BackgroundTaskManager(self)
+
         doc_lbl = QtGui.QLabel(
             "Browse the hierarchy on the left to find <tt>Version</tt> "
             "entities."
         )
 
         # the field manager handles retrieving widgets for shotgun field types
-        fields_manager = shotgun_fields.ShotgunFieldManager(self)
+        self._fields_manager = shotgun_fields.ShotgunFieldManager(
+            self, bg_task_manager=self._bg_task_manager)
 
         # construct the view and set the model
         self._hierarchy_view = QtGui.QTreeView()
@@ -55,7 +64,7 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
         self._hierarchy_view.setUniformRowHeights(True)
 
         # this view will display versions for selected entites on the left
-        self._version_view = views.ShotgunTableView(fields_manager)
+        self._version_view = views.ShotgunTableView(self._fields_manager)
         self._version_view.horizontalHeader().setStretchLastSection(True)
 
         # add an overlay to the version view to show messages while querying
@@ -81,8 +90,16 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
 
         # the fields manager needs time to initialize itself. once that's done,
         # the widgets can begin to be populated.
-        fields_manager.initialized.connect(self._populate_ui)
-        fields_manager.initialize()
+        self._fields_manager.initialized.connect(self._populate_ui)
+        self._fields_manager.initialize()
+
+    def destroy(self):
+        """
+        Destroy the model as required by the API.
+        """
+        self._hierarchy_model.destroy()
+        self._bg_task_manager.shut_down()
+        super(ShotgunHierarchyDemo, self).destroy()
 
     def _populate_ui(self):
         """
@@ -93,12 +110,14 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
         # the "/" url means "show the hierarchies for all projects"
         # the "Version.entity" seed means build a hierarchy that leads to
         # entities that are linked via the Version.entity field.
-        self._hierarchy_model = shotgun_model.SimpleShotgunHierarchyModel(self)
+        self._hierarchy_model = shotgun_model.SimpleShotgunHierarchyModel(
+            self, bg_task_manager=self._bg_task_manager)
         self._hierarchy_model.load_data("/", "Version.entity")
         self._hierarchy_view.setModel(self._hierarchy_model)
 
         # create a simple shotgun model for querying the versions
-        self._version_model = shotgun_model.SimpleShotgunModel(self)
+        self._version_model = shotgun_model.SimpleShotgunModel(
+            self, bg_task_manager=self._bg_task_manager)
 
         # --- connect some signals
 

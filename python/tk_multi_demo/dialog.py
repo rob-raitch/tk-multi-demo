@@ -76,6 +76,10 @@ class DemoWidget(QtGui.QSplitter):
         # quick lookup of previously created file models via demo names
         self._demo_file_model_lookup = {}
 
+        # keep a reference to all demo widgets created. this will prevent issues
+        # with garbage collection
+        self.__all_demos = []
+
         # construct the model based on the hierarchy defined in the
         # demos module
         self._demo_model = self._get_demo_model()
@@ -193,6 +197,17 @@ class DemoWidget(QtGui.QSplitter):
         # set the default demo
         self._set_default_demo()
 
+        QtCore.QCoreApplication.instance().aboutToQuit.connect(self.destroy)
+
+    def destroy(self):
+        """Manually call destroy on the created demos.
+
+        This allows them to do their own cleanup.
+        """
+
+        for demo in self.__all_demos:
+            demo.destroy()
+
     def set_demo(self, demo_info):
         """
         Given a dict of info about a demo, show it in the UI.
@@ -242,6 +257,10 @@ class DemoWidget(QtGui.QSplitter):
                     "\n\n%s\n%s" % (e, tb)
                 )
                 return
+
+            # keep a reference to all created widgets to avoid problems with
+            # garbage collection
+            self.__all_demos.append(widget)
 
             stack_pos = self._demo_widget_tab.addWidget(widget)
             self._demo_stack_lookup[demo_name] = stack_pos
