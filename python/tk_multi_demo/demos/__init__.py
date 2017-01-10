@@ -18,6 +18,8 @@ from overlay import OverlayDemo
 from shotgun_menu import ShotgunMenuDemo
 from shotgun_hierarchy import ShotgunHierarchyDemo
 from shotgun_globals import ShotgunGlobalsDemo
+from automation import AutomationDemo
+
 
 # the default demo to display when the app starts up.
 DEMO_DEFAULT = HelpDemo
@@ -39,6 +41,8 @@ DEMOS_LIST = [
     "Model Demos",
         ShotgunHierarchyDemo,
         FieldWidgetDelegateDemo,
+    "Automation Demo",
+        AutomationDemo,
 
     "Help Demos",
         HelpDemo,
