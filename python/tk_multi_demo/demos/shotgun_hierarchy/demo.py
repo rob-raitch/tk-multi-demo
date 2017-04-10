@@ -162,6 +162,14 @@ class ShotgunHierarchyDemo(QtGui.QWidget):
             self._hierarchy_proxy_model.mapToSource(indexes[0])
         )
 
+        # RA experiments 20170410
+        # Human-readable for messaging
+        current_selection = selected_item.text()
+        # Everything you should need to act upon
+        print selected_item.get_sg_data()
+
+        # End RA
+        
         # the item will be a ShotgunHierarchyItem. Access the data necessary
         # to load data for the shotgun model
         try:
